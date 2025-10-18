@@ -1,0 +1,39 @@
+<div class="modal_head">
+    <i class="icon_close" onclick="common.modal_hide()"></i>
+</div>
+<div class="modal_body">
+    <!-- First name field -->
+    <div class="input_group_modal">
+        <div>First name</div>
+        <input type="text" id="first_name" value="{$user.first_name}">
+    </div>
+    <!-- Last name field -->
+    <div class="input_group_modal">
+        <div>Last name</div>
+        <input type="text" id="last_name" value="{$user.last_name}">
+    </div>
+    <!-- Phone field: numeric input is not enforced in the UI, cleaning is done server side -->
+    <div class="input_group_modal">
+        <div>Phone</div>
+        <input type="text" id="phone" value="{$user.phone}">
+    </div>
+    <!-- Email field: will be converted to lowercase server side -->
+    <div class="input_group_modal">
+        <div>Email</div>
+        <input type="text" id="email" value="{$user.email}">
+    </div>
+    <!-- Plots field: comma separated list of plot numbers -->
+    <div class="input_group_modal">
+        <div>Plots</div>
+        <input type="text" id="plots" value="{$user.plot_id}">
+    </div>
+    <!-- Controls: save and cancel -->
+    <div class="modal_controls">
+        <div>
+            <div class="btn_modal" onclick="common.user_edit_update({$user.id});">Save</div>
+        </div>
+        <div>
+            <div class="btn_modal light" onclick="common.modal_hide();">Cancel</div>
+        </div>
+    </div>
+</div>
