@@ -1,4 +1,4 @@
-let common = {
+var common = {
 
     // vars
 
