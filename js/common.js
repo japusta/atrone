@@ -83,15 +83,15 @@ var common = {
 
     auth_send: () => {
         // vars
-        let data = {phone: gv('phone')};
-        let location = {dpt: 'auth', act: 'send'};
+        let data = { phone: gv('phone') };
+        let location = { dpt: 'auth', act: 'send' };
         // call
-        request({location: location, data: data}, (result) => {
+        request({ location: location, data: data }, (result) => {
             if (result.error_msg) {
                 html('login_note', result.error_msg);
                 remove_class('login_note', 'fade');
-                setTimeout(function() { add_class('login_note', 'fade'); }, 3000);
-                setTimeout(function() { html('login_note', ''); }, 3500);
+                setTimeout(function () { add_class('login_note', 'fade'); }, 3000);
+                setTimeout(function () { html('login_note', ''); }, 3500);
             } else html(qs('body'), result.html);
         });
     },
@@ -105,8 +105,8 @@ var common = {
             if (result.error_msg) {
                 html('login_note', result.error_msg);
                 remove_class('login_note', 'fade');
-                setTimeout(function() { add_class('login_note', 'fade'); }, 3000);
-                setTimeout(function() { html('login_note', ''); }, 3500);
+                setTimeout(function () { add_class('login_note', 'fade'); }, 3000);
+                setTimeout(function () { html('login_note', ''); }, 3500);
             } else window.location = window.location.href;
         });
     },
@@ -115,12 +115,13 @@ var common = {
 
     search_do: (act) => {
         // vars
-        let data = { search: gv('search') };
+        let data = { search: gv('search'), offset: 0 };
         let location = { dpt: 'search', act: act };
         // call
-        request({location: location, data: data}, (result) => {
+        request({ location: location, data: data }, (result) => {
             html('table', result.html);
             html('paginator', result.paginator);
+            global.offset = 0;
         });
     },
 
@@ -131,10 +132,10 @@ var common = {
         cancel_event(e);
         common.menu_popup_hide_all('all');
         // vars
-        let data = {plot_id: plot_id};
-        let location = {dpt: 'plot', act: 'edit_window'};
+        let data = { plot_id: plot_id };
+        let location = { dpt: 'plot', act: 'edit_window' };
         // call
-        request({location: location, data: data}, (result) => {
+        request({ location: location, data: data }, (result) => {
             common.modal_show(400, result.html);
         });
     },
@@ -150,13 +151,85 @@ var common = {
             price: gv('price'),
             offset: global.offset
         };
-        let location = {dpt: 'plot', act: 'edit_update'};
+        let location = { dpt: 'plot', act: 'edit_update' };
         // call
-        request({location: location, data: data}, (result) => {
+        request({ location: location, data: data }, (result) => {
             common.modal_hide();
             html('table', result.html);
+            html('paginator', result.paginator);
+            global.offset = data.offset;
         });
     },
+
+    // users
+
+    user_edit_window: (user_id, e) => {
+        if (e) cancel_event(e);
+        common.menu_popup_hide_all('all');
+        let data = { user_id: user_id };
+        let location = { dpt: 'user', act: 'edit_window' };
+        request({ location: location, data: data }, (result) => {
+            if (result && result.html) common.modal_show(400, result.html);
+        });
+    },
+
+    user_edit_update: (user_id = 0) => {
+        let required = ['first_name', 'last_name', 'phone', 'email'];
+        let has_error = false;
+        required.forEach((field) => {
+            let value = trim(gv(field));
+            if (!value) {
+                add_class(field, 'error');
+                has_error = true;
+            } else remove_class(field, 'error');
+        });
+        if (has_error) {
+            html('modal_errors', 'Please fill in all required fields.');
+            add_class('modal_errors', 'active');
+            return;
+        }
+        remove_class('modal_errors', 'active');
+        html('modal_errors', '');
+        let data = {
+            user_id: user_id,
+            first_name: trim(gv('first_name')),
+            last_name: trim(gv('last_name')),
+            phone: trim(gv('phone')),
+            email: trim(gv('email')),
+            plots: trim(gv('plots')),
+            offset: global.offset || 0
+        };
+        let location = { dpt: 'user', act: 'edit_update' };
+        request({ location: location, data: data }, (result) => {
+            if (result.error_msg) {
+                html('modal_errors', result.error_msg);
+                add_class('modal_errors', 'active');
+                return;
+            }
+            common.modal_hide();
+            html('table', result.html);
+            html('paginator', result.paginator);
+            global.offset = data.offset;
+        });
+    },
+
+    user_delete: (user_id, e) => {
+        if (e) cancel_event(e);
+        common.menu_popup_hide_all('all');
+        if (!confirm('Delete user?')) return;
+        let data = {
+            user_id: user_id,
+            offset: global.offset || 0
+        };
+        let location = { dpt: 'user', act: 'delete' };
+        request({ location: location, data: data }, (result) => {
+            if (result && result.html) {
+                html('table', result.html);
+                html('paginator', result.paginator);
+                global.offset = data.offset;
+            }
+        });
+    }
 }
 
 add_event(document, 'DOMContentLoaded', common.init);

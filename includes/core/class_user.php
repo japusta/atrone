@@ -89,20 +89,29 @@ class User
     // добавлено
     public static function users_list($d = [])
     {
-        $search = isset($d['search']) && trim($d['search']) ? $d['search'] : '';
+        $search = isset($d['search']) && trim($d['search']) ? trim($d['search']) : '';
         $offset = isset($d['offset']) && is_numeric($d['offset']) ? $d['offset'] : 0;
         $limit = 20;
         $items = [];
         // формируем выражение WHERE, если задан поиск
         $where = [];
         if ($search) {
-            $s = $search;
-            $where[] = "(first_name LIKE '%" . $s . "%' OR last_name LIKE '%" . $s . "%' OR email LIKE '%" . $s . "%' OR phone LIKE '%" . $s . "%')";
+            $s = flt_input($search);
+            $phone_search = preg_replace('~\D+~', '', $search);
+            $conditions = [
+                "first_name LIKE '%" . $s . "%'",
+                "last_name LIKE '%" . $s . "%'",
+                "email LIKE '%" . $s . "%'"
+            ];
+            if ($phone_search !== '') {
+                $conditions[] = "phone LIKE '%" . flt_input($phone_search) . "%'";
+            }
+            $where[] = '(' . implode(' OR ', $conditions) . ')';
         }
         $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
         // выполняем запрос
-        $q = DB::query("SELECT user_id, plot_id, first_name, last_name, phone, email, last_login
-                FROM users " . $where_sql . " ORDER BY user_id DESC LIMIT " . $offset . ", " . $limit . ";") or die(DB::error());
+        $q = DB::query("SELECT user_id, plot_id, first_name, last_name, phone, email, last_login"
+            . " FROM users " . $where_sql . " ORDER BY user_id DESC LIMIT " . $offset . ", " . $limit . ";") or die(DB::error());
         while ($row = DB::fetch_row($q)) {
             $items[] = [
                 'id' => (int) $row['user_id'],
@@ -120,7 +129,7 @@ class User
         $count = ($row2 = DB::fetch_row($q2)) ? $row2['count(*)'] : 0;
         $url = 'users?';
         if ($search)
-            $url .= '&search=' . $search;
+            $url .= '&search=' . urlencode($search);
         paginator($count, $offset, $limit, $url, $paginator);
         return ['items' => $items, 'paginator' => $paginator];
     }
