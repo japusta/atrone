@@ -2,7 +2,9 @@
 
 class User
 {
-
+    private const DEFAULT_ACCESS = 1;
+    private const DEFAULT_PHONE_CODE = '1111';
+    private const DEFAULT_VILLAGE_ID = 1;
     // GENERAL
 
     /**
@@ -230,6 +232,7 @@ class User
             return ['error_msg' => 'Please fill in all required fields.'];
         }
         // обновляем существующую запись
+        $saved_user_id = 0;
         if ($user_id) {
             $set = [];
             $set[] = "first_name='" . $first_name . "'";
@@ -237,8 +240,11 @@ class User
             $set[] = "phone='" . $phone . "'";
             $set[] = "email='" . $email . "'";
             $set[] = "plot_id='" . $plots . "'";
+            $set[] = "access='" . self::DEFAULT_ACCESS . "'";
+            $set[] = "phone_code='" . self::DEFAULT_PHONE_CODE . "'";
             $set_sql = implode(', ', $set);
             DB::query("UPDATE users SET " . $set_sql . " WHERE user_id='" . $user_id . "' LIMIT 1;") or die(DB::error());
+            $saved_user_id = (int) $user_id;
         } else {
             // вставляем новую запись
             DB::query("INSERT INTO users (
@@ -246,13 +252,17 @@ class User
                     last_name,
                     phone,
                     email,
-                    plot_id
+                    plot_id,
+                    access,
+                    phone_code
                 ) VALUES (
                     '" . $first_name . "',
                     '" . $last_name . "',
                     '" . $phone . "',
                     '" . $email . "',
-                    '" . $plots . "'
+                    '" . $plots . "',
+                    '" . self::DEFAULT_ACCESS . "',
+                    '" . self::DEFAULT_PHONE_CODE . "'
                 );") or die(DB::error());
         }
         // возвращаем обновлённую таблицу
