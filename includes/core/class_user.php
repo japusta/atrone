@@ -103,7 +103,7 @@ class User
                 "last_name LIKE '%" . $s . "%'",
                 "email LIKE '%" . $s . "%'"
             ];
-            if ($phone_search !== '') {
+            if ($phone_search !== '' && preg_match('~^[\d\s\+\-\(\)]+$~u', $search)) {
                 $conditions[] = "phone LIKE '%" . flt_input($phone_search) . "%'";
             }
             $where[] = '(' . implode(' OR ', $conditions) . ')';
@@ -111,7 +111,7 @@ class User
         $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
         // выполняем запрос
         $q = DB::query("SELECT user_id, plot_id, first_name, last_name, phone, email, last_login"
-            . " FROM users " . $where_sql . " ORDER BY user_id DESC LIMIT " . $offset . ", " . $limit . ";") or die(DB::error());
+                . " FROM users " . $where_sql . " ORDER BY user_id DESC LIMIT " . $offset . ", " . $limit . ";") or die(DB::error());
         while ($row = DB::fetch_row($q)) {
             $items[] = [
                 'id' => (int) $row['user_id'],
@@ -224,6 +224,7 @@ class User
         $email = isset($d['email']) ? strtolower(trim($d['email'])) : '';
         $plots = isset($d['plots']) ? trim($d['plots']) : '';
         $offset = isset($d['offset']) ? preg_replace('~\D+~', '', $d['offset']) : 0;
+        $search = isset($d['search']) ? trim($d['search']) : '';
         // проверяем обязательные поля (кроме plots)
         if (!$first_name || !$last_name || !$phone || !$email) {
             return ['error_msg' => 'Please fill in all required fields.'];
@@ -255,7 +256,7 @@ class User
                 );") or die(DB::error());
         }
         // возвращаем обновлённую таблицу
-        return self::users_fetch(['offset' => $offset]);
+        return self::users_fetch(['offset' => $offset, 'search' => $search]);
     }
 
     /**
@@ -271,6 +272,7 @@ class User
     {
         $user_id = isset($d['user_id']) && is_numeric($d['user_id']) ? $d['user_id'] : 0;
         $offset = isset($d['offset']) ? preg_replace('~\D+~', '', $d['offset']) : 0;
+        $search = isset($d['search']) ? trim($d['search']) : '';
         if ($user_id) {
             DB::query("DELETE FROM users WHERE user_id='" . $user_id . "' LIMIT 1;") or die(DB::error());
         }

@@ -11,6 +11,15 @@ var common = {
         add_event(document, 'mousedown touchstart', common.auto_hide_modal);
         add_event(document, 'click', () => common.menu_popup_hide_all('inactive', event));
         add_event(document, 'scroll', () => common.menu_popup_hide_all('all', event));
+        if (typeof global.search_value === 'undefined') {
+            global.search_value = trim(gv('search')) || '';
+        }
+        if (typeof global.search_tokens === 'undefined') {
+            global.search_tokens = {};
+        }
+        if (typeof global.search_counter === 'undefined') {
+            global.search_counter = 0;
+        }
     },
 
     menu_popup_toggle: (el, e) => {
@@ -115,10 +124,18 @@ var common = {
 
     search_do: (act) => {
         // vars
-        let data = { search: gv('search'), offset: 0 };
+        // let data = { search: gv('search'), offset: 0 };
+        let value = trim(gv('search'));
+        global.search_value = value;
+        global.search_counter += 1;
+        let token = global.search_counter;
+        global.search_tokens[act] = token;
+        let data = { search: value, offset: 0 };
         let location = { dpt: 'search', act: act };
         // call
         request({ location: location, data: data }, (result) => {
+            if (!result) return;
+            if (global.search_tokens && global.search_tokens[act] !== token) return;
             html('table', result.html);
             html('paginator', result.paginator);
             global.offset = 0;
@@ -197,7 +214,8 @@ var common = {
             phone: trim(gv('phone')),
             email: trim(gv('email')),
             plots: trim(gv('plots')),
-            offset: global.offset || 0
+            offset: global.offset || 0,
+            search: global.search_value || ''
         };
         let location = { dpt: 'user', act: 'edit_update' };
         request({ location: location, data: data }, (result) => {
@@ -219,7 +237,8 @@ var common = {
         if (!confirm('Delete user?')) return;
         let data = {
             user_id: user_id,
-            offset: global.offset || 0
+            offset: global.offset || 0,
+            search: global.search_value || ''
         };
         let location = { dpt: 'user', act: 'delete' };
         request({ location: location, data: data }, (result) => {
