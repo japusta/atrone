@@ -1,5 +1,8 @@
 <?php
 
+use Modules\Users\Application\UserService;
+
+
 class Plot {
 
     // GENERAL
@@ -43,6 +46,7 @@ class Plot {
         if ($search) $where[] = "number LIKE '%".$search."%'";
         $where = $where ? "WHERE ".implode(" AND ", $where) : "";
         // info
+        $service = new UserService();
         $q = DB::query("SELECT plot_id, status, billing, number, size, price, base_fixed, electricity_t1, electricity_t2, updated
             FROM plots ".$where." ORDER BY number+0 LIMIT ".$offset.", ".$limit.";") or die (DB::error());
         while ($row = DB::fetch_row($q)) {

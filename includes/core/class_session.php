@@ -1,5 +1,8 @@
 <?php
 
+use Modules\Users\Application\UserService;
+
+
 class Session {
 
     // VARS
@@ -90,7 +93,7 @@ class Session {
         $phone = isset($d['phone']) ? preg_replace('~\D+~', '', $d['phone']) : 0;
         // validate
         if (!$phone) return error_response(1003, 'One of the parameters was missing or was passed in the wrong format.', ['phone' => 'empty field']);
-        $user = User::user_info(['phone' => $phone]);
+        $user = Session::user_service()->getAuthInfo(['phone' => $phone]);
         if ($user['access'] != 1) return error_response(1004, 'User with this phone is not found.', ['phone' => 'incorrect phone']);
         // query
         DB::query("UPDATE users SET phone_attempts_sms=phone_attempts_sms+1, phone_attempts_code='0' WHERE user_id='1' LIMIT 1;") or die (DB::error());
@@ -108,21 +111,23 @@ class Session {
         if (!$phone) return error_response(1003, 'One of the parameters was missing or was passed in the wrong format.', ['phone' => 'empty field']);
         if (!$code) return error_response(1003, 'One of the parameters was missing or was passed in the wrong format.', ['code' => 'empty field']);
         // check
-        $q = DB::query("SELECT user_id, access, first_name, phone_code, phone_attempts_code, last_login FROM users WHERE phone='".$phone."' LIMIT 1;") or die (DB::error());
-        $row = DB::fetch_row($q);
+        $row = Session::user_service()->findUserByPhone($phone);
         // error (unregistered)
         if (!$row) return error_response(1004, 'User with this phone is not found', ['phone' => 'user is not registered']);
+        $user_id = (int) $row['user_id'];
+        $last_login = isset($row['last_login']) ? (int) $row['last_login'] : 0;
+        $attemptsRaw = isset($row['phone_attempts_code']) ? (int) $row['phone_attempts_code'] : 0;
         // error (login attempts)
-        $attempts = LOGIN_ATTEMPTS - Session::phone_attempts_code($row['user_id'], $row['last_login'], $row['phone_attempts_code']);
+        $attempts = LOGIN_ATTEMPTS - Session::phone_attempts_code($user_id, $last_login, $attemptsRaw);
         if (!$attempts) return error_response(1005, 'Number of invalid code attempts has been exceeded for this user, please try again later.', ['code' => 'exceeded error limit, please try later']);
         // error (code)
         if ($row['phone_code'] != $code) {
-            DB::query("UPDATE users SET phone_attempts_code=phone_attempts_code+1, last_login='".Session::$ts."' WHERE user_id='".$row['user_id']."' LIMIT 1;") or die (DB::error());
+            DB::query("UPDATE users SET phone_attempts_code=phone_attempts_code+1, last_login='".Session::$ts."' WHERE user_id='".$user_id."' LIMIT 1;") or die (DB::error());
             return error_response(1005, 'Invalid phone code, number of remaining attempts is '.$attempts.'.', ['code' => 'invalid phone code']);
         }
         // vars
-        Session::$user_id = $row['user_id'];
-        Session::$access = $row['access'];
+        Session::$user_id = $user_id;
+        Session::$access = (int) $row['access'];
         Session::$ts = time();
         Session::$tz = 240;
         // update
@@ -145,5 +150,14 @@ class Session {
         unset($_COOKIE['token']);
         return 'ok';
     }
+    private static function user_service(): UserService
+    {
+        static $service;
+        if (!$service) {
+            $service = new UserService();
+        }
+        return $service;
+    }
+
 
 }

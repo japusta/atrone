@@ -10,9 +10,19 @@
  * @param array  $d   массив POST‑параметров, содержащий строку поиска и смещение
  * @return array      массив с HTML‑таблицей и кодом пагинатора
  */
-function controller_search($act, $d) {
-    if ($act == 'plots') return Plot::plots_fetch($d);
+
+use Modules\Users\Application\UserService;
+
+function controller_search($act, $d)
+{
+    if ($act == 'plots')
+        return Plot::plots_fetch($d);
     // добавлена поддержка поиска по списку пользователей
-    if ($act == 'users') return User::users_fetch($d);
+    if ($act == 'users') {
+        $service = new UserService();
+        $result = $service->getPaginatedList($d['search'] ?? '', isset($d['offset']) && is_numeric($d['offset']) ? (int) $d['offset'] : 0);
+        HTML::assign('users', $result['items']);
+        return ['html' => HTML::fetch('./partials/users_table.html'), 'paginator' => $result['paginator']];
+    }
     return [];
 }

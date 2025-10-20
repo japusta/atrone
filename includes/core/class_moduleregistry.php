@@ -41,13 +41,19 @@ class ModuleRegistry
             $config = require $configPath;
             if (isset($config['pages']) && is_array($config['pages'])) {
                 foreach ($config['pages'] as $path => $handler) {
-                    self::$pages[$path] = $handler;
+                    $callable = self::normalizeHandler($handler);
+                    if ($callable) {
+                        self::$pages[$path] = $callable;
+                    }
                 }
             }
 
             if (isset($config['api']) && is_array($config['api'])) {
                 foreach ($config['api'] as $path => $handler) {
-                    self::$api[$path] = $handler;
+                    $callable = self::normalizeHandler($handler);
+                    if ($callable) {
+                        self::$api[$path] = $callable;
+                    }
                 }
             }
         }
@@ -82,5 +88,41 @@ class ModuleRegistry
         }
 
         return call_user_func(self::$api[$path], $action, $payload);
+    }
+
+    private static function normalizeHandler($handler)
+    {
+        if (is_callable($handler)) {
+            return $handler;
+        }
+
+        if (is_string($handler) && class_exists($handler)) {
+            $instance = new $handler();
+            if (is_callable($instance)) {
+                return $instance;
+            }
+
+            if (method_exists($instance, 'handle')) {
+                return [$instance, 'handle'];
+            }
+
+            if (method_exists($instance, '__invoke')) {
+                return $instance;
+            }
+        }
+
+        if (is_array($handler) && count($handler) === 2) {
+            [$class, $method] = $handler;
+            if (is_string($class) && class_exists($class)) {
+                $instance = new $class();
+                if (method_exists($instance, $method)) {
+                    return [$instance, $method];
+                }
+            } elseif (is_object($class) && method_exists($class, $method)) {
+                return [$class, $method];
+            }
+        }
+
+        return null;
     }
 }

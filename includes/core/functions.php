@@ -12,6 +12,7 @@ function init_classes() {
                 return;
             }
         }
+
         $core_path = __DIR__.'/class_'.strtolower($class_name).'.php';
         if (file_exists($core_path)) {
             require $core_path;
