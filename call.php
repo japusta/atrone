@@ -1,26 +1,28 @@
 <?php
 
-// INIT
+if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+    echo '';
+    exit;
+}
 
-if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') echo '';
+require __DIR__.'/cfg/general.inc.php';
+require __DIR__.'/src/Core/Autoloader.php';
 
-require('./cfg/general.inc.php');
-require('./includes/core/functions.php');
+App\Core\Autoloader::register();
 
-init_classes();
-init_controllers_call();
+$app = new App\Core\Application();
 
-DB::connect();
+$location = $_POST['location'] ?? [];
+$payload = $_POST['data'] ?? [];
 
-// VARS
+if (!is_array($location)) {
+    $location = [];
+}
 
-$location = isset($_POST['location']) ? flt_input($_POST['location']) : NULL;
-$data = isset($_POST['data']) ? flt_input($_POST['data']) : NULL;
+if (!is_array($payload)) {
+    $payload = [];
+}
 
-$dpt = $location['dpt'] ?? NULL;
-$act = $location['act'] ?? NULL;
-
-// SESSION
-
-Session::init(1);
-Route::route_call($dpt, $act, $data);
+$response = $app->handleAjaxRequest($location, $payload);
+$response->send();
+exit;

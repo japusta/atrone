@@ -5,9 +5,9 @@ use Modules\Plots\Controllers\AjaxController;
 
 return [
     'pages' => [
-        'plots' => [PageController::class, 'index'],
+        'plots' => PageController::class,
     ],
     'api' => [
-        'plot' => [AjaxController::class, 'handle'],
+        'plot' => AjaxController::class,
     ],
 ];
