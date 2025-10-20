@@ -2,7 +2,7 @@
 
 namespace App\Core\Http;
 
-final class Response
+class Response
 {
     private string $content;
     private int $statusCode;
