@@ -38,18 +38,15 @@ class Route {
     private static function route_common() {
         if (Session::$access != 1) controller_login();
         else if (Route::$path == 'logout') Session::logout();
-        else if (Route::$path == 'plots') controller_plots();
-        // добавил хэндлер для users page
-        else if (Route::$path == 'users') controller_users();
+        else if (ModuleRegistry::handlePage(Route::$path, Route::$q)) return;
     }
 
     public static function route_call($path, $act, $data) {
         // routes
         if ($path == 'auth') $result = controller_auth($act, $data);
-        else if ($path == 'plot') $result = controller_plot($act, $data);
         // добавил хэндлер для user ajax запросов
-        else if ($path == 'user') $result = controller_user($act, $data);
         else if ($path == 'search') $result = controller_search($act, $data);
+        else if (ModuleRegistry::hasApi($path)) $result = ModuleRegistry::handleApi($path, $act, $data);
         else $result = [];
         // output
         echo json_encode($result, true);

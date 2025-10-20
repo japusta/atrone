@@ -4,22 +4,30 @@
 
 function init_classes() {
     spl_autoload_register(function ($class_name) {
-        include './includes/core/class_'.strtolower($class_name).'.php';
+        if (strpos($class_name, 'Modules\\') === 0) {
+            $relative = substr($class_name, strlen('Modules\\'));
+            $path = __DIR__.'/../../modules/'.str_replace('\\', '/', $relative).'.php';
+            if (file_exists($path)) {
+                require $path;
+                return;
+            }
+        }
+        $core_path = __DIR__.'/class_'.strtolower($class_name).'.php';
+        if (file_exists($core_path)) {
+            require $core_path;
+        }
     });
 }
 
 function init_controllers_common() {
-    $includes_dir = opendir('./includes/controllers_common');
-    while (($inc_file = readdir($includes_dir)) != false) {
-        if (strstr($inc_file, '.php')) require('./includes/controllers_common/'.$inc_file);
-    }
+    ModuleRegistry::load();
+    require('./includes/controllers_common/login.php');
 }
 
 function init_controllers_call() {
-    $includes_dir = opendir('./includes/controllers_call');
-    while (($inc_file = readdir($includes_dir)) != false) {
-        if (strstr($inc_file, '.php')) require('./includes/controllers_call/'.$inc_file);
-    }
+    ModuleRegistry::load();
+    require('./includes/controllers_call/auth.php');
+    require('./includes/controllers_call/search.php');
 }
 
 function flt_input($var) {
