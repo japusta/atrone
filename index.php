@@ -1,20 +1,9 @@
 <?php
 
-// INIT
+require __DIR__.'/cfg/general.inc.php';
+require __DIR__.'/src/Core/Autoloader.php';
 
-require('./cfg/general.inc.php');
-require('./includes/core/functions.php');
+App\Core\Autoloader::register();
 
-init_classes();
-init_controllers_common();
-
-DB::connect();
-
-// SESSION
-
-Session::init();
-Route::init();
-
-$g['path'] = Route::$path;
-HTML::assign('global', $g);
-HTML::display('./partials/index.html');
+$app = new App\Core\Application();
+$app->run();

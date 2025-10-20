@@ -5,9 +5,9 @@ use Modules\Users\Controllers\AjaxController;
 
 return [
     'pages' => [
-        'users' => [PageController::class, 'index'],
+        'users' => PageController::class,
     ],
     'api' => [
-        'user' => [AjaxController::class, 'handle'],
+        'user' => AjaxController::class,
     ],
 ];

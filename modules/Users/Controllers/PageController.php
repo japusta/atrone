@@ -2,29 +2,28 @@
 
 namespace Modules\Users\Controllers;
 
+use App\Core\Http\Request;
+use App\Core\Template\PageView;
 use Modules\Users\Application\UserService;
 
-class PageController
+final class PageController
 {
-    private UserService $service;
+    private UserService $userService;
 
-    public function __construct(?UserService $service = null)
+    public function __construct(UserService $userService)
     {
-        $this->service = $service ?? new UserService();
+        $this->userService = $userService;
     }
 
-    public function __invoke(array $query): void
+    public function __invoke(Request $request): PageView
     {
-        $offset = isset($query['offset']) && is_numeric($query['offset']) ? (int) $query['offset'] : 0;
-        $search = isset($query['search']) ? (string) $query['search'] : '';
+        $offset = $request->getQueryParam('offset', 0);
+        $offset = is_numeric($offset) ? (int) $offset : 0;
+        $search = (string) $request->getQueryParam('search', '');
 
-        $users = $this->service->getPaginatedList($search, $offset);
+        $data = $this->userService->getPaginatedList($search, $offset);
+        $data['users'] = $data['items'];
 
-        \HTML::assign('users', $users['items']);
-        \HTML::assign('paginator', $users['paginator']);
-        \HTML::assign('search', $users['search']);
-        \HTML::assign('offset', $users['offset']);
-        \HTML::assign('section', 'users.html');
-        \HTML::assign('main_content', 'home.html');
+        return new PageView('index', 'home', 'users', $data);
     }
 }

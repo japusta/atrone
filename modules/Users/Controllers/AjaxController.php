@@ -2,66 +2,58 @@
 
 namespace Modules\Users\Controllers;
 
+use App\Core\Template\TemplateRenderer;
 use Modules\Users\Application\UserService;
 
-class AjaxController
+final class AjaxController
 {
-    private UserService $service;
+    private UserService $userService;
+    private TemplateRenderer $renderer;
 
-    public function __construct(?UserService $service = null)
+    public function __construct(UserService $userService, TemplateRenderer $renderer)
     {
-        $this->service = $service ?? new UserService();
+        $this->userService = $userService;
+        $this->renderer = $renderer;
     }
 
-    public function __invoke(?string $action, $payload)
+    public function __invoke(?string $action, array $payload): array
     {
         if ($action === 'edit_window') {
-            return $this->editWindow($payload);
+            $userId = isset($payload['user_id']) && is_numeric($payload['user_id']) ? (int) $payload['user_id'] : 0;
+            $user = $this->userService->getEditData($userId);
+            $html = $this->renderer->render('user_edit', ['user' => $user]);
+
+            return ['html' => $html];
         }
 
         if ($action === 'edit_update') {
-            return $this->editUpdate($payload);
+            $data = $this->userService->saveUser($payload);
+            if (isset($data['error_msg'])) {
+                return ['error_msg' => $data['error_msg']];
+            }
+
+            $html = $this->renderer->render('users_table', [
+                'users' => $data['items'],
+            ]);
+
+            return [
+                'html' => $html,
+                'paginator' => $data['paginator'],
+            ];
         }
 
         if ($action === 'delete') {
-            return $this->delete($payload);
+            $data = $this->userService->deleteUser($payload);
+            $html = $this->renderer->render('users_table', [
+                'users' => $data['items'],
+            ]);
+
+            return [
+                'html' => $html,
+                'paginator' => $data['paginator'],
+            ];
         }
 
         return [];
-    }
-
-    private function editWindow($payload): array
-    {
-        $userId = isset($payload['user_id']) && is_numeric($payload['user_id']) ? (int) $payload['user_id'] : 0;
-        $user = $this->service->getEditData($userId);
-        \HTML::assign('user', $user);
-
-        return ['html' => \HTML::fetch('./partials/user_edit.html')];
-    }
-
-    private function editUpdate($payload): array
-    {
-        $result = $this->service->saveUser(is_array($payload) ? $payload : []);
-        if (isset($result['error_msg'])) {
-            return $result;
-        }
-
-        \HTML::assign('users', $result['items']);
-
-        return [
-            'html' => \HTML::fetch('./partials/users_table.html'),
-            'paginator' => $result['paginator'],
-        ];
-    }
-
-    private function delete($payload): array
-    {
-        $result = $this->service->deleteUser(is_array($payload) ? $payload : []);
-        \HTML::assign('users', $result['items']);
-
-        return [
-            'html' => \HTML::fetch('./partials/users_table.html'),
-            'paginator' => $result['paginator'],
-        ];
     }
 }

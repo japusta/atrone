@@ -95,6 +95,7 @@ function request(data, callback) {
     if (!xhr) return;
     xhr.open('POST', '/call.php', true);
     xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.send(request_serialize(data));
     xhr.onreadystatechange = () => {
         if (xhr.readyState !== 4) return;
